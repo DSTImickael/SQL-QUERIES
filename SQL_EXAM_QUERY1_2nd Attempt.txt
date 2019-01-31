@@ -1,0 +1,44 @@
+SELECT TEMPQ.CustomerID, 
+	   TEMPQ.CustomerName, 
+	   TEMPQ.TotalNBOrders, 
+	   TEMPQ.TotalNBInvoices, 
+	   TEMPQ.OrdersTotalValue,
+	   TEMPQ.InvoicesTotalValue,
+	   (TEMPQ.InvoicesTotalValue - TEMPQ.OrdersTotalValue) as AbsoluteValueDifference
+
+FROM
+	(
+	SELECT CU.CustomerID, 
+		   CU.CustomerName, 
+		   (
+			SELECT COUNT(ORD.OrderID)
+			FROM Sales.Orders as ORD
+			WHERE CU.CustomerID = ORD.CustomerID
+			GROUP BY ORD.CustomerID
+			)as TotalNBOrders,
+		   (
+			SELECT COUNT(INV.InvoiceID)
+			FROM Sales.Invoices as INV 
+			WHERE CU.CustomerID = INV.CustomerID
+			GROUP BY INV.CustomerID
+			)as TotalNBInvoices,
+			(
+			SELECT SUM(ol.Quantity * ol.UnitPrice)
+			FROM	Sales.Orders as ORD,
+					Sales.Invoices as INV,
+					Sales.OrderLines as ol
+			WHERE	CU.CustomerID = ORD.CustomerID
+					AND ol.OrderID = ORD.OrderID
+					AND ORD.OrderID = INV.OrderID
+			)as OrdersTotalValue,
+			(
+			SELECT SUM(il.Quantity * il.UnitPrice)
+			FROM	Sales.Invoices as INV,
+					Sales.InvoiceLines as il
+			WHERE	CU.CustomerID = INV.CustomerID
+					AND il.InvoiceID = INV.InvoiceID
+			)as InvoicesTotalValue
+	FROM Sales.Customers as CU
+	GROUP BY CU.CustomerID, CU.CustomerName
+	) as TEMPQ
+ORDER BY AbsoluteValueDifference DESC, TEMPQ.TotalNBOrders ASC, TEMPQ.CustomerName ASC
