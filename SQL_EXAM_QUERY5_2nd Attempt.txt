@@ -1,0 +1,13 @@
+SELECT PU.CustomerId, 
+	   CU.CustomerName
+FROM dbo.Purchase as PU, 
+	 dbo.Customer as CU
+WHERE PU.CustomerID=CU.CustomerID
+GROUP BY PU.CustomerId, 
+		 CU.CustomerName
+HAVING SUM(PU.Qty)>50 
+		and COUNT(PU.ProductID) = 
+				(
+					SELECT COUNT(ProductID)
+					FROM dbo.Product
+				)
