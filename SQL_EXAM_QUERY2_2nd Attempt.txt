@@ -1,0 +1,10 @@
+UPDATE Sales.InvoiceLines
+SET Unitprice = Unitprice+20
+WHERE InvoiceLineID = (
+SELECT  MIN(il.InvoiceLineID)
+FROM	Sales.Invoices as INV,
+		Sales.InvoiceLines as il,
+		Sales.Customers as CU
+WHERE	CU.CustomerID = INV.CustomerID
+		AND il.InvoiceID = INV.InvoiceID
+		AND CU.CustomerID = 1060)
