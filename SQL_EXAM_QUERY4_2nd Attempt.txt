@@ -1,0 +1,70 @@
+SELECT A.CustomerCategoryName, A.MaxLoss, B.CustomerName,  B.CustomerID
+FROM 
+(
+	SELECT STEMP.CustomerCategoryName, MAX(STEMP.MaxLoss) as MaxLoss
+	FROM
+	(
+		SELECT TEMP.CustomerCategoryName, SUM(TEMP.Quantity * TEMP.UnitPrice) as MaxLoss, TEMP.CustomerName,  TEMP.CustomerID
+		FROM 
+		(
+			SELECT 
+					CU.CustomerCategoryID,
+					CAT.CustomerCategoryName,
+					ORD.CustomerID, 
+					CU.CustomerName,
+					ORD.OrderID, 
+					OL.Quantity,
+					OL.UnitPrice 		
+			FROM Sales.Orders as ORD,
+				Sales.OrderLines as OL,
+				Sales.CustomerCategories as CAT,
+				Sales.Customers as CU
+			WHERE OL.OrderID = ORD.OrderID 
+				and ORD.CustomerID = CU.CustomerID
+				and CU.CustomerCategoryID = CAT.CustomerCategoryID
+				and NOT EXISTS
+				(
+				Select *
+				from Sales.Invoices as INV
+				where ORD.OrderID=INV.OrderID
+				) 
+		) as TEMP
+		GROUP BY TEMP.CustomerCategoryName, TEMP.CustomerName, TEMP.CustomerID	
+	) as STEMP
+	GROUP BY STEMP.CustomerCategoryName
+)as A, 
+(
+	SELECT CTEMP.CustomerName, CTEMP.CustomerID, MAX(CTEMP.MaxLoss) as MaxLoss
+	FROM
+	(
+		SELECT TEMP.CustomerCategoryName, SUM(TEMP.Quantity * TEMP.UnitPrice) as MaxLoss, TEMP.CustomerName,  TEMP.CustomerID
+		FROM 
+		(
+			SELECT 
+					CU.CustomerCategoryID,
+					CAT.CustomerCategoryName,
+					ORD.CustomerID, 
+					CU.CustomerName,
+					ORD.OrderID, 
+					OL.Quantity,
+					OL.UnitPrice 		
+			FROM Sales.Orders as ORD,
+				Sales.OrderLines as OL,
+				Sales.CustomerCategories as CAT,
+				Sales.Customers as CU
+			WHERE OL.OrderID = ORD.OrderID 
+				and ORD.CustomerID = CU.CustomerID
+				and CU.CustomerCategoryID = CAT.CustomerCategoryID
+				and NOT EXISTS
+				(
+				Select *
+				from Sales.Invoices as INV
+				where ORD.OrderID=INV.OrderID
+				) 
+		) as TEMP
+		GROUP BY TEMP.CustomerCategoryName, TEMP.CustomerName, TEMP.CustomerID	
+	) as CTEMP
+	GROUP BY CTEMP.CustomerName, CTEMP.CustomerID
+)as B
+WHERE A.MaxLoss = B.MaxLoss
+ORDER BY A.MaxLoss DESC
